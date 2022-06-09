@@ -4,7 +4,7 @@
 #include <regex>
 #include <chrono>
 #include <algorithm>
-
+#include <cctype>
 #include <set>
 #include <map>
 #include <stack>
@@ -27,12 +27,28 @@ void removeUnnecessaryElements(string &line){
 
 void findUrls(string line, vector<string> &urlList){
     stringstream ss(line);
-    string word;
-
-    const regex pattern("(((http|https)://)?www\\.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)");
-
+    string word, temp;
+    ifstream urls("urls.txt");
+    vector<string> visiURL;
+    while (getline(urls, line))
+    {
+        visiURL.push_back(line);
+    }
+    char dot = '.';
+    size_t found;
+    int lenght;
     while(ss >> word){
-        if(regex_match(word, pattern)) urlList.push_back(word);
+        found = word.find_last_of(dot);
+        if(found != string::npos)
+        {
+            lenght = word.length() - found - 1;
+            temp = word.substr(found + 1, lenght);
+            for (auto it = visiURL.begin(); it != visiURL.end(); it++)
+            {
+                if(temp == *it) urlList.push_back(word);
+            }
+            
+        }
     }
 }
 
@@ -102,6 +118,34 @@ string getFileName(){
     return fileName;
 }
 
+void delMax(map<string, set<int>> wordsList){
+    int max = 0;
+    string maxW, maxWup;
+    for(auto it = wordsList.begin(); it != wordsList.end(); it++)
+    {
+        if(it->second.size() > max) 
+        {
+            maxW = it->first;
+            max = it->second.size();
+        }
+    }
+    maxWup = maxW;
+    maxWup[0] = toupper(maxWup[0]);
+    cout << "Dazniausiai pasikartojantis zodis: " << maxWup << endl;
+    string line;
+    ifstream file("duom.txt");
+    ofstream out("outputBeMaxElem.txt");
+    while(getline(file, line))
+    {
+        line = regex_replace(line, regex(maxW), "");
+        line = regex_replace(line, regex(maxWup), "");
+        out << line << endl;
+    }
+
+}
+
+
+
 int main(){
     ifstream file(getFileName());
 
@@ -126,8 +170,10 @@ int main(){
         
         lineNr++;
     }
-
+    delMax(wordsList);
+    
     printUrlAndWordsList(urlList, wordsList);
+    
 
     // End timer
     auto end = sc.now();
